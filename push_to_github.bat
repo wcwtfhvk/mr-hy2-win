@@ -3,7 +3,7 @@ setlocal
 cd /d "%~dp0"
 
 set "REPO_URL=%~1"
-if "%REPO_URL%"=="" set "REPO_URL=https://github.com/wcwtfhvk/hy2-win-deploy.git"
+if "%REPO_URL%"=="" set "REPO_URL=https://github.com/wcwtfhvk/mr-hy2-win.git"
 
 echo Target: %REPO_URL%
 git rev-parse --is-inside-work-tree >nul 2>&1

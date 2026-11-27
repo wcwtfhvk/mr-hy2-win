@@ -19,7 +19,7 @@ from hy2_config import BIN_DIR, ensure_dirs
 GITHUB_API = "https://api.github.com/repos/apernet/hysteria/releases/latest"
 RELEASE_BASE = "https://github.com/apernet/hysteria/releases/download"
 OFFICIAL_LATEST = "https://download.hysteria.network/app/latest"
-USER_AGENT = "hy2-win-deploy/1.0 (+https://github.com/apernet/hysteria)"
+USER_AGENT = "mr-hy2-win/1.0 (+https://github.com/apernet/hysteria)"
 ProgressCB = Callable[[str, int], None]
 
 

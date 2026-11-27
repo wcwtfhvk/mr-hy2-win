@@ -11,7 +11,7 @@
 | 表单规模 | 11 个页签 / 107 个字段，全部定义在 `schema/fields.json` |
 | 验证环境 | Windows / Python 3.12.3 / PyYAML 6.0.4 / tkinter 8.6 |
 | 发行产物 | `dist/Hysteria2Deployer.exe`（GUI）、`dist/hy2ctl.exe`（CLI） |
-| 仓库地址 | https://github.com/wcwtfhvk/hy2-win-deploy |
+| 仓库地址 | https://github.com/wcwtfhvk/mr-hy2-win |
 
 ---
 
@@ -125,7 +125,7 @@ ACME 模式要求：一个已解析到本机公网 IP 的域名，且 80 或 443
 ## 4. 目录结构
 
 ```
-hy2-win-deploy/
+mr-hy2-win/
 ├─ main.py                  统一入口；无参数启 GUI，带子命令走 CLI
 ├─ cli.py                   13 个无界面命令的实现
 ├─ hy2_config.py            配置模型：默认值、校验、YAML 生成、分享 URI、反向导入
@@ -179,8 +179,8 @@ hy2ctl.exe status
 ### 5.2 源码运行
 
 ```bat
-git clone https://github.com/wcwtfhvk/hy2-win-deploy.git
-cd hy2-win-deploy
+git clone https://github.com/wcwtfhvk/mr-hy2-win.git
+cd mr-hy2-win
 python -m venv .venv
 .venv\Scripts\python.exe -m pip install -r requirements.txt
 .venv\Scripts\python.exe main.py download --arch amd64 --version latest

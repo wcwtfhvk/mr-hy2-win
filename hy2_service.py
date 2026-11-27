@@ -166,7 +166,7 @@ def _task_xml(exe: Path, config: Path, log_level: str) -> str:
     args = f'server -c "{config}" -l {log_level} --disable-update-check'
     return f'''<?xml version="1.0" encoding="UTF-16"?>
 <Task version="1.2" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">
-  <RegistrationInfo><Description>Hysteria2 server managed by hy2-win-deploy</Description></RegistrationInfo>
+  <RegistrationInfo><Description>Hysteria2 server managed by mr-hy2-win</Description></RegistrationInfo>
   <Triggers><BootTrigger><Enabled>true</Enabled></BootTrigger></Triggers>
   <Principals><Principal id="Author"><UserId>S-1-5-18</UserId><RunLevel>HighestAvailable</RunLevel></Principal></Principals>
   <Settings>
