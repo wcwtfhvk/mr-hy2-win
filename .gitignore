@@ -5,15 +5,11 @@ __pycache__/
 venv/
 .pytest_cache/
 
-# PyInstaller
+# PyInstaller 中间产物（dist/ 下的 exe、bin/ 下的内核、*.spec 都随仓库提供）
 build/
-dist/
-*.spec
 
-# 运行时数据（每台机器各自生成，含明文凭据）
-bin/
-logs/
-profiles/
+# 运行日志与状态（logs/ 目录由 .gitkeep 保留，日志内容不入库）
+logs/*.log
 config.yaml
 state.json
 autostart-task.xml

@@ -12,6 +12,7 @@
 | 验证环境 | Windows / Python 3.12.3 / PyYAML 6.0.4 / tkinter 8.6 |
 | 发行产物 | `dist/Hysteria2Deployer.exe`（GUI）、`dist/hy2ctl.exe`（CLI） |
 | 仓库地址 | https://github.com/wcwtfhvk/mr-hy2-win |
+| 随仓库附带 | `bin/` 内核、`dist/` 两个 exe、`profiles/` 示例方案、两个 `*.spec` |
 
 ---
 
@@ -137,7 +138,7 @@ mr-hy2-win/
 ├─ profiles/                配置方案，每个方案一个 .json
 ├─ bin/                     Hysteria2 内核 + version.json
 ├─ logs/
-│  └─ hysteria.log          内核输出（追加写）
+│  └─ .gitkeep              目录占位；运行日志写入 hysteria.log（不入库）
 ├─ config.yaml              当前生效配置，由「保存并生成」写出
 ├─ state.json               运行中内核的 pid / exe / config / cmd
 ├─ autostart-task.xml       生成给 schtasks 的任务定义
@@ -155,7 +156,7 @@ mr-hy2-win/
 
 打包成 exe 后，`ROOT` 指向 exe 所在目录，`RESOURCE_DIR` 指向 PyInstaller 的 `_MEIPASS`。因此 `profiles/`、`bin/`、`logs/`、`config.yaml` 都会写在 exe 旁边，而不是解压临时目录，重启不会丢。`dist/` 下的两个 exe 请放在同一个目录使用。
 
-Git 仓库只跟踪源码、字段定义、测试与文档。`.gitignore` 排除了 `.venv/`、`build/`、`dist/`、`bin/`、`logs/`、`profiles/`、`config.yaml`、`state.json`、`autostart-task.xml`、`*.spec`、`__pycache__/`。这些文件 clone 后不存在，由程序在首次运行时自行生成；其中 `profiles/*.json` 含明文密码，绝不能提交。
+Git 仓库随附源码、字段定义、测试、文档，以及 `bin/`（官方内核 + `version.json`）、`dist/`（两个 exe、附带内核、示例方案）、`profiles/default.json`（示例方案）、`logs/.gitkeep` 和两个 `*.spec`。`.gitignore` 只排除 `.venv/`、`build/`、`__pycache__/`、`logs/*.log`、`config.yaml`、`state.json`、`autostart-task.xml`：这些是环境/构建缓存与运行时状态，clone 后由 `ensure_dirs()` 自行创建。`profiles/default.json` 里的密码是示例随机值，部署前必须替换。
 
 ---
 
@@ -163,7 +164,7 @@ Git 仓库只跟踪源码、字段定义、测试与文档。`.gitignore` 排除
 
 ### 5.1 发行包直接运行（推荐）
 
-`dist/` 来自本地执行 `build.bat` 或 Release 压缩包，本身不进 Git 仓库。拿到之后：
+`dist/` 里的两个 exe 已随仓库提供，也可用 `build.bat` 重新生成。拿到之后：
 
 1. 进入 `dist/`。
 2. 双击 `Hysteria2Deployer.exe`。
@@ -187,7 +188,7 @@ python -m venv .venv
 .venv\Scripts\python.exe main.py
 ```
 
-仓库只含源码与文档。内核二进制、打包产物、配置方案、日志、`config.yaml` 都不入库：clone 后第一次运行请执行上面的 `download`（或点 GUI 的「下载 / 更新内核」），其余目录由 `ensure_dirs()` 自动创建。
+仓库已附带 `bin/` 内核和 `dist/` 可执行文件，clone 后可跳过代码块里的 `download`（那一行只用于升级内核或换架构）。`config.yaml`、`state.json`、运行日志仍是本地生成、不入库，目录由 `ensure_dirs()` 自动创建。
 
 不弹窗自检：
 
@@ -806,7 +807,7 @@ cmd /c build.bat
 2. 打 `--onefile --windowed --name Hysteria2Deployer`，`--add-data "schema;schema"` 把字段定义嵌进 exe。
 3. 打 `--onefile --console --name hy2ctl`，供命令行使用。
 
-产物在 `dist/`。两个 exe 放在同一目录即可；`profiles/`、`bin/`、`logs/`、`config.yaml` 会在该目录生成。发布时建议把已下载并校验过的 `bin/` 一起带上，用户开箱即用，不必联网。以上产物均被 `.gitignore` 排除，Git 仓库里的 `build.bat` 是唯一构建入口。
+产物在 `dist/`。两个 exe 放在同一目录即可；`profiles/`、`bin/`、`logs/`、`config.yaml` 会在该目录生成。发布时建议把已下载并校验过的 `bin/` 一起带上，用户开箱即用，不必联网。以上产物已随仓库提供，`build.bat` 可随时重新生成；只有 `build/` 中间目录不入库。
 
 两个打包相关处理：
 
@@ -855,7 +856,7 @@ cmd /c build.bat
 
 ## 16. 安全
 
-- `profiles/*.json` 里保存明文认证密码、混淆密码和 API secret；把它们当作凭据文件保管，不要提交到公开仓库。
+- 仓库里的 `profiles/default.json` 与 `dist/profiles/default.json` 是示例方案，密码为首次运行时生成的示例随机值，部署前必须替换。改成自己的配置后，带真实密码的方案文件不要提交回仓库。
 - 自有证书模式下 `tls.key` 是私钥，路径建议用绝对路径并限制 ACL。
 - 防火墙只放行 `listen` 指定的那一个 UDP 端口；`trafficStats.listen` 不要暴露到公网，务必设 `secret`。
 - 下载器默认做 SHA256 校验；若因 GitHub API 不可用走了官方直链而显示「未取得官方校验值」，`bin/version.json` 里会记录 `verified: false` 和本地哈希，可自行与官方 `hashes.txt` 核对。
@@ -909,4 +910,4 @@ dist\Hysteria2Deployer.exe --selftest
 
 ## 19. 许可
 
-本仓库未附带 LICENSE 文件，脚本代码默认保留所有权利；需要再分发或授权使用请联系仓库所有者。Hysteria2 内核是独立项目，遵循其自身许可证，见 https://github.com/apernet/hysteria/blob/master/LICENSE.md 。仓库不分发该二进制，自行分发 `bin/` 时请一并保留上游许可信息。
+本仓库未附带 LICENSE 文件，脚本代码默认保留所有权利；需要再分发或授权使用请联系仓库所有者。Hysteria2 内核是独立项目，遵循其自身许可证，见 https://github.com/apernet/hysteria/blob/master/LICENSE.md 。仓库随附该二进制，再分发时请一并保留上游许可信息。
