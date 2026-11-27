@@ -1,0 +1,186 @@
+{
+  "version": 1,
+  "tabs": [
+    {
+      "id": "basic",
+      "title": "基础",
+      "fields": [
+        {"key": "_serverHost", "label": "公网域名 / IP", "type": "str", "default": "example.com", "hint": "仅用于生成客户端分享链接，不写入服务端配置"},
+        {"key": "listen", "label": "监听地址 listen", "type": "str", "default": ":443", "hint": "省略地址则同时监听 IPv4/IPv6；Windows 不支持端口范围（端口跳跃仅 Linux）"},
+        {"key": "_arch", "label": "内核架构", "type": "choice", "options": ["amd64", "amd64-avx", "386", "arm64"], "default": "amd64", "hint": "下载时使用的 hysteria-windows-<架构>.exe"},
+        {"key": "_version", "label": "内核版本", "type": "str", "default": "latest", "hint": "latest 或形如 app/v2.14.0 的 release tag"},
+        {"key": "_logLevel", "label": "日志等级", "type": "choice", "options": ["info", "debug", "warn", "error"], "default": "info"},
+        {"key": "disableUDP", "label": "禁用 UDP 转发", "type": "bool", "default": false},
+        {"key": "udpIdleTimeout", "label": "UDP 会话超时", "type": "str", "default": "60s"},
+        {"key": "speedTest", "label": "允许客户端测速", "type": "bool", "default": false},
+        {"key": "ignoreClientBandwidth", "label": "忽略客户端带宽设置", "type": "bool", "default": false}
+      ]
+    },
+    {
+      "id": "tls",
+      "title": "证书 / TLS",
+      "fields": [
+        {"type": "note", "text": "tls 与 acme 二选一，不可同时出现。ACME 需要域名已解析到本机、80/443 可被公网访问。"},
+        {"key": "_tlsMode", "label": "证书模式", "type": "choice", "options": ["acme", "tls"], "default": "acme"},
+        {"key": "acme.domains", "label": "ACME 域名列表", "type": "list", "columns": [{"key": "domain", "label": "域名", "width": 300}], "default": [{"domain": "example.com"}], "transform": "strings", "when": {"_tlsMode": "acme"}},
+        {"key": "acme.email", "label": "ACME 邮箱", "type": "str", "default": "admin@example.com", "when": {"_tlsMode": "acme"}},
+        {"key": "acme.ca", "label": "CA", "type": "choice", "options": ["", "letsencrypt", "zerossl"], "default": "", "when": {"_tlsMode": "acme"}},
+        {"key": "acme.dir", "label": "证书缓存目录", "type": "str", "default": "acme", "when": {"_tlsMode": "acme"}},
+        {"key": "acme.type", "label": "验证方式", "type": "choice", "options": ["http", "tls", "dns"], "default": "http", "when": {"_tlsMode": "acme"}},
+        {"key": "acme.listenHost", "label": "验证监听地址", "type": "str", "default": "0.0.0.0", "when": {"_tlsMode": "acme"}},
+        {"key": "acme.http.altPort", "label": "HTTP-01 端口", "type": "int", "default": 80, "when": {"_tlsMode": "acme"}},
+        {"key": "acme.tls.altPort", "label": "TLS-ALPN-01 端口", "type": "int", "default": 443, "when": {"_tlsMode": "acme"}},
+        {"key": "acme.dns.name", "label": "DNS 提供商", "type": "str", "default": "", "hint": "type=dns 时填写，如 cloudflare", "when": {"_tlsMode": "acme"}},
+        {"key": "acme.dns.config", "label": "DNS 提供商参数", "type": "text", "as": "kv", "default": "", "hint": "每行 key=value", "when": {"_tlsMode": "acme"}},
+        {"key": "tls.cert", "label": "证书文件 cert", "type": "str", "default": "", "hint": "绝对路径或相对工作目录", "when": {"_tlsMode": "tls"}},
+        {"key": "tls.key", "label": "私钥文件 key", "type": "str", "default": "", "when": {"_tlsMode": "tls"}},
+        {"key": "tls.sniGuard", "label": "SNI 校验", "type": "choice", "options": ["", "strict", "disable", "dns-san"], "default": "", "when": {"_tlsMode": "tls"}},
+        {"key": "tls.clientCA", "label": "客户端 CA", "type": "str", "default": "", "when": {"_tlsMode": "tls"}},
+        {"key": "_echEnabled", "label": "启用 ECH", "type": "bool", "default": false},
+        {"key": "ech.keyPath", "label": "ECH 密钥路径", "type": "str", "default": "ech.pem", "when": {"_echEnabled": true}}
+      ]
+    },
+    {
+      "id": "auth",
+      "title": "认证",
+      "fields": [
+        {"key": "_authType", "label": "认证类型", "type": "choice", "options": ["password", "userpass", "http", "command"], "default": "password"},
+        {"key": "auth.password", "label": "单密码", "type": "secret", "default": "", "hint": "新建配置时自动生成随机密码", "when": {"_authType": "password"}},
+        {"key": "auth.userpass", "label": "多用户", "type": "list", "columns": [{"key": "user", "label": "用户名", "width": 150}, {"key": "pass", "label": "密码", "width": 180}], "default": [], "transform": "userpass", "when": {"_authType": "userpass"}},
+        {"key": "auth.http.url", "label": "HTTP 验证地址", "type": "str", "default": "", "when": {"_authType": "http"}},
+        {"key": "auth.http.insecure", "label": "跳过 TLS 校验", "type": "bool", "default": false, "when": {"_authType": "http"}},
+        {"key": "auth.command", "label": "外部验证命令", "type": "str", "default": "", "hint": "服务端会附加 addr auth tx 三个参数执行", "when": {"_authType": "command"}}
+      ]
+    },
+    {
+      "id": "bandwidth",
+      "title": "带宽 / 拥塞",
+      "fields": [
+        {"type": "note", "text": "bandwidth 是 Brutal 的速率上限；不填则使用 congestion 指定的拥塞控制器（默认 BBR）。单位 bps/kbps/mbps/gbps/tbps。"},
+        {"key": "_bandwidthEnabled", "label": "启用带宽限制", "type": "bool", "default": false},
+        {"key": "bandwidth.up", "label": "服务端上行", "type": "str", "default": "100 mbps", "when": {"_bandwidthEnabled": true}},
+        {"key": "bandwidth.down", "label": "服务端下行", "type": "str", "default": "1 gbps", "when": {"_bandwidthEnabled": true}},
+        {"key": "bandwidth.disableLossCompensation", "label": "关闭丢包补偿", "type": "bool", "default": false, "when": {"_bandwidthEnabled": true}},
+        {"key": "_congestionEnabled", "label": "显式配置拥塞控制", "type": "bool", "default": false},
+        {"key": "congestion.type", "label": "控制器", "type": "choice", "options": ["bbr", "reno"], "default": "bbr", "when": {"_congestionEnabled": true}},
+        {"key": "congestion.bbrProfile", "label": "BBR 预设", "type": "choice", "options": ["standard", "conservative", "aggressive"], "default": "standard", "when": {"_congestionEnabled": true}}
+      ]
+    },
+    {
+      "id": "obfs",
+      "title": "混淆",
+      "fields": [
+        {"type": "note", "text": "启用混淆会失去标准 QUIC / HTTP3 伪装能力，客户端必须使用相同类型和密码。"},
+        {"key": "_obfsType", "label": "混淆类型", "type": "choice", "options": ["none", "salamander", "gecko"], "default": "none"},
+        {"key": "obfs.salamander.password", "label": "Salamander 密码", "type": "secret", "default": "", "when": {"_obfsType": "salamander"}},
+        {"key": "obfs.gecko.password", "label": "Gecko 密码", "type": "secret", "default": "", "when": {"_obfsType": "gecko"}},
+        {"key": "obfs.gecko.minPacketSize", "label": "Gecko 最小分片", "type": "int", "default": 512, "when": {"_obfsType": "gecko"}},
+        {"key": "obfs.gecko.maxPacketSize", "label": "Gecko 最大分片", "type": "int", "default": 1200, "hint": "需 >= 最小分片且 <= 2048", "when": {"_obfsType": "gecko"}}
+      ]
+    },
+    {
+      "id": "masquerade",
+      "title": "伪装",
+      "fields": [
+        {"type": "note", "text": "不启用时服务端对所有 HTTP 请求返回 404。proxy 模式会反代指定站点。"},
+        {"key": "_masqType", "label": "伪装模式", "type": "choice", "options": ["none", "proxy", "file", "string"], "default": "proxy"},
+        {"key": "masquerade.proxy.url", "label": "反代目标 URL", "type": "str", "default": "https://news.ycombinator.com/", "when": {"_masqType": "proxy"}},
+        {"key": "masquerade.proxy.rewriteHost", "label": "重写 Host", "type": "bool", "default": true, "when": {"_masqType": "proxy"}},
+        {"key": "masquerade.proxy.insecure", "label": "跳过上游 TLS 校验", "type": "bool", "default": false, "when": {"_masqType": "proxy"}},
+        {"key": "masquerade.proxy.xForwarded", "label": "发送 X-Forwarded-For", "type": "bool", "default": false, "when": {"_masqType": "proxy"}},
+        {"key": "masquerade.file.dir", "label": "静态目录", "type": "str", "default": "www", "when": {"_masqType": "file"}},
+        {"key": "masquerade.string.content", "label": "固定响应内容", "type": "str", "default": "hello world", "when": {"_masqType": "string"}},
+        {"key": "masquerade.string.headers", "label": "响应头", "type": "text", "as": "kv", "default": "content-type: text/plain", "when": {"_masqType": "string"}},
+        {"key": "masquerade.string.statusCode", "label": "状态码", "type": "int", "default": 200, "when": {"_masqType": "string"}},
+        {"key": "_masqHttpEnabled", "label": "额外监听 HTTP/HTTPS 伪装", "type": "bool", "default": false},
+        {"key": "masquerade.listenHTTP", "label": "HTTP 监听", "type": "str", "default": ":80", "when": {"_masqHttpEnabled": true}},
+        {"key": "masquerade.listenHTTPS", "label": "HTTPS 监听", "type": "str", "default": ":443", "when": {"_masqHttpEnabled": true}},
+        {"key": "masquerade.forceHTTPS", "label": "强制跳转 HTTPS", "type": "bool", "default": true, "when": {"_masqHttpEnabled": true}}
+      ]
+    },
+    {
+      "id": "quic",
+      "title": "QUIC 参数",
+      "fields": [
+        {"type": "note", "text": "默认值已足够。修改时建议保持流窗口与连接窗口 2:5 的比例。"},
+        {"key": "_quicEnabled", "label": "覆盖 QUIC 默认参数", "type": "bool", "default": false},
+        {"key": "quic.initStreamReceiveWindow", "label": "初始流接收窗口", "type": "int", "default": 8388608, "when": {"_quicEnabled": true}},
+        {"key": "quic.maxStreamReceiveWindow", "label": "最大流接收窗口", "type": "int", "default": 8388608, "when": {"_quicEnabled": true}},
+        {"key": "quic.initConnReceiveWindow", "label": "初始连接接收窗口", "type": "int", "default": 20971520, "when": {"_quicEnabled": true}},
+        {"key": "quic.maxConnReceiveWindow", "label": "最大连接接收窗口", "type": "int", "default": 20971520, "when": {"_quicEnabled": true}},
+        {"key": "quic.maxIdleTimeout", "label": "最大空闲超时", "type": "str", "default": "30s", "when": {"_quicEnabled": true}},
+        {"key": "quic.maxIncomingStreams", "label": "最大并发流", "type": "int", "default": 1024, "when": {"_quicEnabled": true}},
+        {"key": "quic.disablePathMTUDiscovery", "label": "禁用 Path MTU 探测", "type": "bool", "default": false, "when": {"_quicEnabled": true}},
+        {"key": "quic.disableStatelessReset", "label": "禁用无状态重置", "type": "bool", "default": false, "when": {"_quicEnabled": true}}
+      ]
+    },
+    {
+      "id": "dns",
+      "title": "DNS / 嗅探",
+      "fields": [
+        {"key": "_resolverType", "label": "DNS 解析器", "type": "choice", "options": ["none", "udp", "tcp", "tls", "https"], "default": "none", "hint": "none 表示使用系统默认 DNS"},
+        {"key": "resolver.udp.addr", "label": "UDP DNS 地址", "type": "str", "default": "8.8.4.4:53", "when": {"_resolverType": "udp"}},
+        {"key": "resolver.udp.timeout", "label": "UDP 超时", "type": "str", "default": "4s", "when": {"_resolverType": "udp"}},
+        {"key": "resolver.tcp.addr", "label": "TCP DNS 地址", "type": "str", "default": "8.8.8.8:53", "when": {"_resolverType": "tcp"}},
+        {"key": "resolver.tcp.timeout", "label": "TCP 超时", "type": "str", "default": "4s", "when": {"_resolverType": "tcp"}},
+        {"key": "resolver.tls.addr", "label": "DoT 地址", "type": "str", "default": "1.1.1.1:853", "when": {"_resolverType": "tls"}},
+        {"key": "resolver.tls.timeout", "label": "DoT 超时", "type": "str", "default": "10s", "when": {"_resolverType": "tls"}},
+        {"key": "resolver.tls.sni", "label": "DoT SNI", "type": "str", "default": "cloudflare-dns.com", "when": {"_resolverType": "tls"}},
+        {"key": "resolver.tls.insecure", "label": "DoT 跳过校验", "type": "bool", "default": false, "when": {"_resolverType": "tls"}},
+        {"key": "resolver.https.addr", "label": "DoH 地址", "type": "str", "default": "1.1.1.1:443", "when": {"_resolverType": "https"}},
+        {"key": "resolver.https.timeout", "label": "DoH 超时", "type": "str", "default": "10s", "when": {"_resolverType": "https"}},
+        {"key": "resolver.https.sni", "label": "DoH SNI", "type": "str", "default": "cloudflare-dns.com", "when": {"_resolverType": "https"}},
+        {"key": "resolver.https.insecure", "label": "DoH 跳过校验", "type": "bool", "default": false, "when": {"_resolverType": "https"}},
+        {"key": "_sniffEnabled", "label": "启用协议嗅探", "type": "bool", "default": false},
+        {"key": "sniff.timeout", "label": "嗅探超时", "type": "str", "default": "2s", "when": {"_sniffEnabled": true}},
+        {"key": "sniff.rewriteDomain", "label": "重写域名", "type": "bool", "default": false, "when": {"_sniffEnabled": true}},
+        {"key": "sniff.tcpPorts", "label": "TCP 端口范围", "type": "str", "default": "80,443", "when": {"_sniffEnabled": true}},
+        {"key": "sniff.udpPorts", "label": "UDP 端口范围", "type": "str", "default": "all", "when": {"_sniffEnabled": true}}
+      ]
+    },
+    {
+      "id": "acl",
+      "title": "ACL / 出站",
+      "fields": [
+        {"type": "note", "text": "新版 rules 用表达式语法；inline / file 为旧版语法。四选一。未配置 ACL 时所有流量走第一个出站。"},
+        {"key": "_aclMode", "label": "ACL 模式", "type": "choice", "options": ["none", "rules", "rulesFile", "inline", "file"], "default": "none"},
+        {"key": "acl.rules", "label": "新版规则（YAML 列表）", "type": "text", "as": "yaml", "default": "", "hint": "示例：\n- outbound: reject\n  match: geoip(\"cn\")\n- outbound: direct", "when": {"_aclMode": "rules"}},
+        {"key": "acl.rulesFile", "label": "新版规则文件", "type": "str", "default": "acl.yaml", "when": {"_aclMode": "rulesFile"}},
+        {"key": "acl.inline", "label": "旧版内联规则", "type": "list", "columns": [{"key": "rule", "label": "规则", "width": 380}], "default": [], "transform": "strings", "hint": "例如 reject(all, udp/443)", "when": {"_aclMode": "inline"}},
+        {"key": "acl.file", "label": "旧版规则文件", "type": "str", "default": "acl.txt", "when": {"_aclMode": "file"}},
+        {"key": "acl.geoip", "label": "GeoIP 数据库路径", "type": "str", "default": "", "when": {"_aclMode": "rules"}},
+        {"key": "acl.geosite", "label": "GeoSite 数据库路径", "type": "str", "default": "", "when": {"_aclMode": "rules"}},
+        {"key": "acl.geoUpdateInterval", "label": "地理库刷新间隔", "type": "str", "default": "168h", "when": {"_aclMode": "rules"}},
+        {"key": "outbounds", "label": "出站规则", "type": "list", "columns": [{"key": "name", "label": "名称", "width": 110}, {"key": "type", "label": "类型", "width": 80}, {"key": "extra", "label": "附加参数 JSON", "width": 260}], "default": [], "transform": "outbounds", "hint": "附加参数示例：direct -> {\"mode\":\"auto\"}；socks5 -> {\"addr\":\"1.2.3.4:1080\"}；http -> {\"url\":\"http://a:b@host:8080\"}"}
+      ]
+    },
+    {
+      "id": "api",
+      "title": "API / Realm",
+      "fields": [
+        {"key": "_statsEnabled", "label": "启用流量统计 API", "type": "bool", "default": false},
+        {"key": "trafficStats.listen", "label": "API 监听地址", "type": "str", "default": ":9999", "when": {"_statsEnabled": true}},
+        {"key": "trafficStats.secret", "label": "API 密钥", "type": "secret", "default": "", "when": {"_statsEnabled": true}},
+        {"type": "note", "text": "Realm 用于无公网 IP 的 NAT 环境；启用后 listen 需填 realm://TOKEN@rendezvous/name。"},
+        {"key": "_realmEnabled", "label": "输出 Realm 调优参数", "type": "bool", "default": false},
+        {"key": "realm.stunServers", "label": "STUN 服务器", "type": "list", "columns": [{"key": "server", "label": "host:port", "width": 260}], "default": [], "transform": "strings", "when": {"_realmEnabled": true}},
+        {"key": "realm.stunTimeout", "label": "STUN 超时", "type": "str", "default": "5s", "when": {"_realmEnabled": true}},
+        {"key": "realm.punchTimeout", "label": "打洞超时", "type": "str", "default": "5s", "when": {"_realmEnabled": true}},
+        {"key": "realm.heartbeatInterval", "label": "心跳间隔", "type": "str", "default": "30s", "when": {"_realmEnabled": true}},
+        {"key": "realm.insecure", "label": "跳过 Rendezvous 校验", "type": "bool", "default": false, "when": {"_realmEnabled": true}},
+        {"key": "realm.ipMode", "label": "IP 模式", "type": "choice", "options": ["dual", "4", "6"], "default": "dual", "when": {"_realmEnabled": true}},
+        {"key": "realm.portMapping.enabled", "label": "启用端口映射", "type": "bool", "default": false, "when": {"_realmEnabled": true}},
+        {"key": "realm.portMapping.timeout", "label": "映射超时", "type": "str", "default": "10s", "when": {"_realmEnabled": true}},
+        {"key": "realm.portMapping.lifetime", "label": "映射有效期", "type": "str", "default": "10m", "when": {"_realmEnabled": true}}
+      ]
+    },
+    {
+      "id": "advanced",
+      "title": "高级",
+      "fields": [
+        {"type": "note", "text": "下方 YAML 会按顶层键深合并进最终配置，用于覆盖表单未收录的新字段。键名与 Hysteria 官方一致。"},
+        {"key": "_advancedYaml", "label": "附加 YAML", "type": "text", "as": "raw", "default": "", "hint": "例如：\nquic:\n  maxIdleTimeout: 60s"}
+      ]
+    }
+  ]
+}
